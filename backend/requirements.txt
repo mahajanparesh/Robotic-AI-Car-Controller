@@ -1,0 +1,9 @@
+google-cloud-aiplatform
+streamlit 
+speechrecognition 
+pyttsx3 
+vertexai
+gTTS
+paho-mqtt
+fastapi
+uvicorn
