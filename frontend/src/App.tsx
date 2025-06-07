@@ -8,7 +8,8 @@ import {
   ArrowRight,
   Square,
   RotateCcw,
-  Circle,
+  Mic, // Import the Mic icon
+  StopCircle, // Import StopCircle icon for stopping recording
 } from "lucide-react";
 
 interface Message {
@@ -31,7 +32,17 @@ const App = () => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState("connected");
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const sessionInitialized = useRef(false);
+
+  // Speech-to-Text states and refs
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationFrameIdRef = useRef<number | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -40,6 +51,72 @@ const App = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Initialize session when component mounts
+  useEffect(() => {
+    if (!sessionInitialized.current) {
+      initializeSession();
+      sessionInitialized.current = true;
+    }
+    // Cleanup session when component unmounts (page closes/refreshes)
+    const handleBeforeUnload = () => {
+      endSession();
+    };
+    const handleUnload = () => {
+      endSession();
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("unload", handleUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("unload", handleUnload);
+      endSession();
+    };
+  }, []);
+
+  const initializeSession = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/start_session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSessionId(data.session_id);
+        console.log("Session initialized:", data.session_id);
+      } else {
+        console.error("Failed to initialize session");
+      }
+    } catch (error) {
+      console.error("Error initializing session:", error);
+    }
+  };
+
+  const endSession = async () => {
+    if (sessionId) {
+      try {
+        const data = JSON.stringify({ session_id: sessionId });
+        if (navigator.sendBeacon) {
+          const blob = new Blob([data], { type: "application/json" });
+          navigator.sendBeacon("http://localhost:8000/end_session", blob);
+        } else {
+          await fetch("http://localhost:8000/end_session", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: data,
+            keepalive: true,
+          });
+        }
+        console.log("Session ended:", sessionId);
+      } catch (error) {
+        console.error("Error ending session:", error);
+      }
+    }
+  };
 
   const quickCommands = [
     { icon: ArrowUp, label: "Forward", command: "move forward" },
@@ -51,46 +128,44 @@ const App = () => {
   ];
 
   const sendMessage = async (messageText = input) => {
-    if (!messageText.trim()) return;
-
+    if (!messageText.trim() || !sessionId) return;
     const userMessage: Message = {
       id: Date.now(),
       role: "user",
       text: messageText,
       timestamp: new Date(),
     };
-
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
-
     try {
       const response = await fetch("http://localhost:8000/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message: messageText }),
+        body: JSON.stringify({
+          message: messageText,
+          session_id: sessionId,
+        }),
       });
-
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
-
       const data = await response.json();
-
+      if (data.session_id && data.session_id !== sessionId) {
+        setSessionId(data.session_id);
+      }
       const botMessage: Message = {
         id: Date.now() + 1,
         role: "bot",
         text: data.response,
         timestamp: new Date(),
       };
-
       setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
       console.error("Error:", error);
       setConnectionStatus("disconnected");
-
       const errorMessage: Message = {
         id: Date.now() + 1,
         role: "bot",
@@ -98,7 +173,6 @@ const App = () => {
         timestamp: new Date(),
         isError: true,
       };
-
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
@@ -118,6 +192,121 @@ const App = () => {
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const clearChat = () => {
+    setMessages([
+      {
+        id: 1,
+        role: "bot",
+        text: 'Hello! I\'m your robotic car assistant. You can control the car with natural language commands like "move forward", "turn left", or "stop".',
+        timestamp: new Date(),
+      },
+    ]);
+  };
+
+  // --- Speech-to-Text Functions ---
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorderRef.current.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: "audio/webm; codecs=opus",
+        });
+        await sendAudioForTranscription(audioBlob);
+      };
+
+      mediaRecorderRef.current.start(100); // Record in 100ms chunks for real-time processing
+      setIsRecording(true);
+      setInput("Listening..."); // Indicate that the bot is listening
+
+      // Setup for real-time transcription (optional, but good for responsiveness)
+      audioContextRef.current = new (window.AudioContext ||
+        (window as any).webkitAudioContext)();
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      analyserRef.current.fftSize = 2048;
+      source.connect(analyserRef.current);
+
+      // Continuously send audio chunks for real-time transcription
+      const processAudio = () => {
+        if (!isRecording) return; // Stop if not recording
+        if (audioChunksRef.current.length > 0) {
+          const currentAudioBlob = new Blob(audioChunksRef.current, {
+            type: "audio/webm; codecs=opus",
+          });
+          audioChunksRef.current = []; // Clear chunks after sending
+          sendAudioForTranscription(currentAudioBlob, true); // Send as interim
+        }
+        animationFrameIdRef.current = requestAnimationFrame(processAudio);
+      };
+      animationFrameIdRef.current = requestAnimationFrame(processAudio);
+    } catch (error) {
+      console.error("Error starting recording:", error);
+      alert("Please allow microphone access to use voice commands.");
+      setIsRecording(false);
+      setInput("");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      if (animationFrameIdRef.current) {
+        cancelAnimationFrame(animationFrameIdRef.current);
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+      setIsRecording(false);
+      setInput("");
+    }
+  };
+
+  const sendAudioForTranscription = async (
+    audioBlob: Blob,
+    isInterim: boolean = false
+  ) => {
+    setIsLoading(true);
+    const formData = new FormData();
+    formData.append("audio", audioBlob);
+
+    try {
+      const response = await fetch("http://localhost:8000/transcribe_audio", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Transcription network response was not ok");
+      }
+
+      const data = await response.json();
+      if (data.transcription) {
+        setInput(data.transcription); // Update input field with transcribed text
+        if (!isInterim) {
+          // If it's a final transcription, send it as a message
+          sendMessage(data.transcription);
+        }
+      } else {
+        console.warn("No transcription received.");
+      }
+    } catch (error) {
+      console.error("Error sending audio for transcription:", error);
+      alert("Error transcribing audio. Please try again.");
+    } finally {
+      if (!isInterim) {
+        // Only set loading to false for final transcription
+        setIsLoading(false);
+      }
+    }
   };
 
   const styles = {
@@ -173,6 +362,11 @@ const App = () => {
       height: "8px",
       borderRadius: "50%",
       backgroundColor: connectionStatus === "connected" ? "#10b981" : "#ef4444",
+    },
+    sessionInfo: {
+      fontSize: "12px",
+      color: "#9ca3af",
+      fontFamily: "monospace",
     },
     mainContent: {
       flex: 1,
@@ -357,18 +551,44 @@ const App = () => {
       opacity: 0.5,
       cursor: "not-allowed",
     },
+    clearButton: {
+      backgroundColor: "#ef4444",
+      color: "white",
+      border: "none",
+      padding: "8px 12px",
+      borderRadius: "8px",
+      cursor: "pointer",
+      fontSize: "12px",
+      marginTop: "10px",
+    },
+    micButton: {
+      backgroundColor: isRecording ? "#ef4444" : "#4CAF50", // Red when recording, green when not
+      color: "white",
+      border: "none",
+      padding: "14px 16px",
+      borderRadius: "12px",
+      cursor: "pointer",
+      transition: "background-color 0.2s",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      minWidth: "50px",
+    },
+    micButtonDisabled: {
+      backgroundColor: "#d1d5db",
+      cursor: "not-allowed",
+    },
   };
-
   return (
     <div style={styles.container}>
       <style>
         {`
           @keyframes bounce {
-            0%, 80%, 100% { 
+            0%, 80%, 100% {
               transform: scale(0);
               opacity: 0.5;
             }
-            40% { 
+            40% {
               transform: scale(1);
               opacity: 1;
             }
@@ -376,7 +596,6 @@ const App = () => {
           .loading-dot-1 { animation-delay: -0.32s; }
           .loading-dot-2 { animation-delay: -0.16s; }
           .loading-dot-3 { animation-delay: 0s; }
-          
           *::-webkit-scrollbar {
             width: 4px;
           }
@@ -392,7 +611,6 @@ const App = () => {
           }
         `}
       </style>
-
       {/* Header */}
       <div style={styles.header}>
         <div style={styles.headerContent}>
@@ -412,9 +630,15 @@ const App = () => {
               </div>
             </div>
           </div>
+          <div>
+            {sessionId && (
+              <div style={styles.sessionInfo}>
+                Session: {sessionId.substring(0, 8)}...
+              </div>
+            )}
+          </div>
         </div>
       </div>
-
       {/* Main Content */}
       <div style={styles.mainContent}>
         {/* Chat Area */}
@@ -473,7 +697,6 @@ const App = () => {
               <div ref={messagesEndRef} />
             </div>
           </div>
-
           {/* Input Area */}
           <div style={styles.inputArea}>
             <div style={styles.inputContainer}>
@@ -484,9 +707,11 @@ const App = () => {
                   setInput(e.target.value)
                 }
                 onKeyDown={handleKeyPress}
-                placeholder="Type your command here..."
+                placeholder={
+                  isRecording ? "Listening..." : "Type your command here..."
+                }
                 style={styles.input}
-                disabled={isLoading}
+                disabled={isLoading || !sessionId || isRecording} // Disable input while recording
                 onFocus={(e) => {
                   e.target.style.borderColor = "#3b82f6";
                   e.target.style.backgroundColor = "white";
@@ -497,21 +722,49 @@ const App = () => {
                 }}
               />
               <button
+                onClick={isRecording ? stopRecording : startRecording}
+                disabled={isLoading || !sessionId}
+                style={{
+                  ...styles.micButton,
+                  ...(isLoading || !sessionId ? styles.micButtonDisabled : {}),
+                }}
+                onMouseEnter={(e) => {
+                  if (!isLoading && sessionId) {
+                    (e.target as HTMLElement).style.backgroundColor =
+                      isRecording ? "#dc2626" : "#45a049"; // Darker red/green on hover
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isLoading && sessionId) {
+                    (e.target as HTMLElement).style.backgroundColor =
+                      isRecording ? "#ef4444" : "#4CAF50"; // Original red/green
+                  }
+                }}
+              >
+                {isRecording ? (
+                  <StopCircle style={{ width: "18px", height: "18px" }} />
+                ) : (
+                  <Mic style={{ width: "18px", height: "18px" }} />
+                )}
+              </button>
+              <button
                 onClick={() => sendMessage()}
-                disabled={isLoading || !input.trim()}
+                disabled={
+                  isLoading || !input.trim() || !sessionId || isRecording
+                } // Disable send button if recording
                 style={{
                   ...styles.sendButton,
-                  ...(isLoading || !input.trim()
+                  ...(isLoading || !input.trim() || !sessionId || isRecording
                     ? styles.sendButtonDisabled
                     : {}),
                 }}
                 onMouseEnter={(e) => {
-                  if (!isLoading && input.trim()) {
+                  if (!isLoading && input.trim() && sessionId && !isRecording) {
                     (e.target as HTMLElement).style.backgroundColor = "#2563eb";
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (!isLoading && input.trim()) {
+                  if (!isLoading && input.trim() && sessionId && !isRecording) {
                     (e.target as HTMLElement).style.backgroundColor = "#3b82f6";
                   }
                 }}
@@ -521,7 +774,6 @@ const App = () => {
             </div>
           </div>
         </div>
-
         {/* Quick Commands Panel */}
         <div style={styles.sidebar}>
           <div style={styles.quickCommands}>
@@ -531,13 +783,15 @@ const App = () => {
                 <button
                   key={index}
                   onClick={() => handleQuickCommand(cmd.command)}
-                  disabled={isLoading}
+                  disabled={isLoading || !sessionId || isRecording} // Disable quick commands if recording
                   style={{
                     ...styles.commandButton,
-                    ...(isLoading ? styles.commandButtonDisabled : {}),
+                    ...(isLoading || !sessionId || isRecording
+                      ? styles.commandButtonDisabled
+                      : {}),
                   }}
                   onMouseEnter={(e) => {
-                    if (!isLoading) {
+                    if (!isLoading && sessionId && !isRecording) {
                       const target = e.target as HTMLElement;
                       target.style.backgroundColor = "#f3f4f6";
                       target.style.borderColor = "#d1d5db";
@@ -545,7 +799,7 @@ const App = () => {
                     }
                   }}
                   onMouseLeave={(e) => {
-                    if (!isLoading) {
+                    if (!isLoading && sessionId && !isRecording) {
                       const target = e.target as HTMLElement;
                       target.style.backgroundColor = "#f9fafb";
                       target.style.borderColor = "#e5e7eb";
@@ -560,11 +814,22 @@ const App = () => {
                 </button>
               ))}
             </div>
+            <button
+              onClick={clearChat}
+              style={styles.clearButton}
+              onMouseEnter={(e) => {
+                (e.target as HTMLElement).style.backgroundColor = "#dc2626";
+              }}
+              onMouseLeave={(e) => {
+                (e.target as HTMLElement).style.backgroundColor = "#ef4444";
+              }}
+            >
+              Clear Chat (UI Only)
+            </button>
           </div>
         </div>
       </div>
     </div>
   );
 };
-
 export default App;
