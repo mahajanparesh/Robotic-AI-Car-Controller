@@ -28,6 +28,12 @@ get_direction_func = FunctionDeclaration(
         "properties": {
             "right_motors": {"type": "string"},
             "left_motors":  {"type": "string"},
+            # speed of motor in percentage, optional, default is '7'
+            "speed": {
+                "type": "string",
+                "default": "7",
+                "description": "Speed of the motors in percentage (default is '7')"
+            },
         },
         "required": ["right_motors", "left_motors"],
     },
@@ -35,14 +41,14 @@ get_direction_func = FunctionDeclaration(
 movement_tool = Tool(function_declarations=[get_direction_func])
 
 # ── 3.  Dummy implementation of the robot command ──────────────────────────────
-def move_car(right_motors: str, left_motors: str) -> dict:
+def move_car(right_motors: str, left_motors: str, speed: str = '7') -> dict:
     """
     Publish motor movement commands to NodeMCU using MQTT.
     """
-    broker = "192.168.1.6"  # Replace with IP of your MQTT broker (e.g., Raspberry Pi or laptop running Mosquitto)
+    broker = "35.200.230.224"  # Replace with IP of your MQTT broker (e.g., Raspberry Pi or laptop running Mosquitto)
     topic = "robot/control"
     client_id = "GeminiClient"
-    message = f"right={right_motors},left={left_motors}"
+    message = f"right={right_motors},left={left_motors},speed={speed}"
 
     try:
         client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id)
