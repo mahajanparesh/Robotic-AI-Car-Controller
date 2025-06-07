@@ -33,6 +33,7 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState("connected");
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [speed, setSpeed] = useState(7); // New state for speed, default to 7
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sessionInitialized = useRef(false);
 
@@ -119,12 +120,16 @@ const App = () => {
   };
 
   const quickCommands = [
-    { icon: ArrowUp, label: "Forward", command: "move forward" },
-    { icon: ArrowDown, label: "Backward", command: "move backward" },
-    { icon: ArrowLeft, label: "Left", command: "turn left" },
-    { icon: ArrowRight, label: "Right", command: "turn right" },
+    { icon: ArrowUp, label: "Forward", command: `move forward at ${speed}` },
+    {
+      icon: ArrowDown,
+      label: "Backward",
+      command: `move backward at ${speed}`,
+    },
+    { icon: ArrowLeft, label: "Left", command: `turn left at ${speed}` },
+    { icon: ArrowRight, label: "Right", command: `turn right at ${speed}` },
     { icon: Square, label: "Stop", command: "stop" },
-    { icon: RotateCcw, label: "Rotate", command: "rotate around" },
+    { icon: RotateCcw, label: "Rotate", command: `rotate around at ${speed}` },
   ];
 
   const sendMessage = async (messageText = input) => {
@@ -578,6 +583,28 @@ const App = () => {
       backgroundColor: "#d1d5db",
       cursor: "not-allowed",
     },
+    speedControl: {
+      marginTop: "20px",
+      paddingTop: "16px",
+      borderTop: "1px solid #e5e7eb",
+      display: "flex",
+      flexDirection: "column" as const,
+      gap: "10px",
+    },
+    speedSlider: {
+      width: "100%",
+      height: "8px",
+      borderRadius: "4px",
+      background: "#d1d5db",
+      outline: "none",
+      cursor: "pointer",
+    },
+    speedValue: {
+      fontSize: "14px",
+      fontWeight: "500",
+      color: "#374151",
+      textAlign: "center" as const,
+    },
   };
   return (
     <div style={styles.container}>
@@ -609,17 +636,156 @@ const App = () => {
           *::-webkit-scrollbar-thumb:hover {
             background: #9ca3af;
           }
+          input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 0 0 1px #3b82f6;
+          }
+          input[type=range]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 0 0 1px #3b82f6;
+          }
+
+          /* --- Responsive Styles --- */
+          @media (max-width: 768px) {
+            .main-content-responsive {
+              flex-direction: column; /* Stack chat and sidebar vertically */
+              padding: 0; /* Remove main padding to allow inner cards to use full width with their own margins */
+              gap: 0; /* No gap needed if margins are applied to children */
+              max-width: 100%; /* Ensure it takes full width */
+              margin: 0; /* Remove auto margins */
+            }
+
+            .header-content-responsive {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+                padding: 15px; /* Adjust header content padding */
+            }
+
+            .header-responsive {
+                padding: 15px; /* Adjust header padding */
+            }
+
+            .header-left-responsive {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .title-responsive {
+                font-size: 20px;
+            }
+
+            .chat-area-responsive,
+            .sidebar-responsive {
+              width: 100%; /* Make both chat area and sidebar take full width */
+              margin-left: auto; /* Center if needed, but not strictly if 100% */
+              margin-right: auto;
+            }
+
+            .messages-container-responsive {
+                height: 350px; /* Reduce chat height */
+                margin: 16px; /* Add margin around the container */
+            }
+            .input-area-responsive {
+                margin: 0 16px 16px 16px; /* Add margin for input area */
+            }
+            .quick-commands-responsive {
+                margin: 0 16px 16px 16px; /* Add margin for quick commands */
+            }
+
+            /* For the very first element in main-content, add top margin */
+            .main-content-responsive > .chat-area-responsive {
+                margin-top: 16px;
+            }
+
+            .messages-container-responsive,
+            .input-area-responsive,
+            .quick-commands-responsive {
+                border-radius: 12px;
+                padding: 20px; /* Keep padding consistent for content inside cards */
+            }
+
+            .command-grid-responsive {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            }
+          }
+
+          @media (max-width: 480px) {
+            .header-responsive {
+                padding: 10px; /* Even smaller header padding */
+            }
+            .title-responsive {
+                font-size: 16px; /* Even smaller title */
+            }
+            .logo-responsive {
+                padding: 6px; /* Smaller logo padding */
+            }
+            .messages-container-responsive {
+                height: 250px; /* Further reduce chat height */
+                margin: 10px; /* Smaller margins for very small screens */
+            }
+            .input-area-responsive {
+                margin: 0 10px 10px 10px; /* Smaller margins */
+            }
+            .quick-commands-responsive {
+                margin: 0 10px 10px 10px; /* Smaller margins */
+            }
+            .messages-container-responsive,
+            .input-area-responsive,
+            .quick-commands-responsive {
+                padding: 15px; /* Adjust padding for content inside cards */
+            }
+            .message-responsive {
+                max-width: 95%; /* Messages take more width */
+                font-size: 13px; /* Smaller message font size */
+            }
+            .input-responsive {
+                padding: 10px 12px; /* Smaller input padding */
+                font-size: 13px;
+            }
+            .send-button-responsive,
+            .mic-button-responsive {
+                padding: 10px 12px; /* Smaller button padding */
+                min-width: 40px; /* Adjust min-width */
+            }
+            .command-button-responsive {
+                padding: 10px 6px; /* Smaller command button padding */
+                font-size: 11px; /* Smaller command button font */
+            }
+            .clear-button-responsive {
+                padding: 5px 8px; /* Smaller clear button padding */
+                font-size: 10px;
+            }
+             .main-content-responsive > .chat-area-responsive {
+                margin-top: 10px;
+            }
+          }
         `}
       </style>
       {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.headerContent}>
-          <div style={styles.headerLeft}>
-            <div style={styles.logo}>
+      <div style={styles.header} className="header-responsive">
+        <div style={styles.headerContent} className="header-content-responsive">
+          <div style={styles.headerLeft} className="header-left-responsive">
+            <div style={styles.logo} className="logo-responsive">
               <Car style={{ width: "24px", height: "24px", color: "white" }} />
             </div>
             <div>
-              <h1 style={styles.title}>Robotic Car Control AI ChatBot</h1>
+              <h1 style={styles.title} className="title-responsive">
+                Robotic Car Control AI ChatBot
+              </h1>
               <div style={styles.status}>
                 <div style={styles.statusDot}></div>
                 <span>
@@ -640,12 +806,18 @@ const App = () => {
         </div>
       </div>
       {/* Main Content */}
-      <div style={styles.mainContent}>
+      <div style={styles.mainContent} className="main-content-responsive">
         {/* Chat Area */}
-        <div style={styles.chatArea}>
+        <div style={styles.chatArea} className="chat-area-responsive">
           {/* Messages */}
-          <div style={styles.messagesContainer}>
-            <div style={styles.messagesScroll}>
+          <div
+            style={styles.messagesContainer}
+            className="messages-container-responsive"
+          >
+            <div
+              style={styles.messagesScroll}
+              className="messages-scroll-responsive"
+            >
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -665,6 +837,7 @@ const App = () => {
                         ? styles.errorMessage
                         : styles.botMessage),
                     }}
+                    className="message-responsive"
                   >
                     <div>{message.text}</div>
                     <div style={styles.messageTime}>
@@ -698,7 +871,7 @@ const App = () => {
             </div>
           </div>
           {/* Input Area */}
-          <div style={styles.inputArea}>
+          <div style={styles.inputArea} className="input-area-responsive">
             <div style={styles.inputContainer}>
               <input
                 type="text"
@@ -720,6 +893,7 @@ const App = () => {
                   e.target.style.borderColor = "#d1d5db";
                   e.target.style.backgroundColor = "#fafafa";
                 }}
+                className="input-responsive"
               />
               <button
                 onClick={isRecording ? stopRecording : startRecording}
@@ -740,6 +914,7 @@ const App = () => {
                       isRecording ? "#ef4444" : "#4CAF50"; // Original red/green
                   }
                 }}
+                className="mic-button-responsive"
               >
                 {isRecording ? (
                   <StopCircle style={{ width: "18px", height: "18px" }} />
@@ -768,6 +943,7 @@ const App = () => {
                     (e.target as HTMLElement).style.backgroundColor = "#3b82f6";
                   }
                 }}
+                className="send-button-responsive"
               >
                 <Send style={{ width: "18px", height: "18px" }} />
               </button>
@@ -775,10 +951,13 @@ const App = () => {
           </div>
         </div>
         {/* Quick Commands Panel */}
-        <div style={styles.sidebar}>
-          <div style={styles.quickCommands}>
+        <div style={styles.sidebar} className="sidebar-responsive">
+          <div
+            style={styles.quickCommands}
+            className="quick-commands-responsive"
+          >
             <h3 style={styles.sidebarTitle}>Quick Commands</h3>
-            <div style={styles.commandGrid}>
+            <div style={styles.commandGrid} className="command-grid-responsive">
               {quickCommands.map((cmd, index) => (
                 <button
                   key={index}
@@ -806,6 +985,7 @@ const App = () => {
                       target.style.transform = "translateY(0)";
                     }
                   }}
+                  className="command-button-responsive"
                 >
                   <cmd.icon
                     style={{ width: "20px", height: "20px", color: "#6b7280" }}
@@ -813,6 +993,19 @@ const App = () => {
                   <span>{cmd.label}</span>
                 </button>
               ))}
+            </div>
+            <div style={styles.speedControl}>
+              <h3 style={styles.sidebarTitle}>Speed Control</h3>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={speed}
+                onChange={(e) => setSpeed(Number(e.target.value))}
+                style={styles.speedSlider}
+                disabled={isLoading || !sessionId || isRecording}
+              />
+              <div style={styles.speedValue}>Speed (%): {speed}</div>
             </div>
             <button
               onClick={clearChat}
@@ -823,6 +1016,7 @@ const App = () => {
               onMouseLeave={(e) => {
                 (e.target as HTMLElement).style.backgroundColor = "#ef4444";
               }}
+              className="clear-button-responsive"
             >
               Clear Chat (UI Only)
             </button>
