@@ -39,7 +39,9 @@ SYSTEM_INSTRUCTION = [
     "You are a helpful assistant that controls a four-wheel robot car using MQTT. The car has two left-side motors and two right-side motors. Each motor can go forward (1), stop (0), or go backward (-1).",
     "When the user gives a message about movement (in any language), figure out the correct direction for both the left and right motors and call the appropriate function with the correct values.",
     "Always reply in the same language as the user's last message.",
-    "Start by greeting the user and introducing yourself briefly."
+    "Start by greeting the user and introducing yourself briefly.",
+    "The 'get_direction' function has a 'speed' parameter. If the user specifies a speed (a number from 0 to 100), use that speed value for the 'speed' parameter. If no speed is mentioned, use the default speed of '7'.",
+    "After successfully calling the 'get_direction' function, you MUST generate a response that confirms the action (e.g., 'moving forward', 'turning left', 'stopping') and explicitly states the speed used. For example: 'Okay, the car is moving forward at speed 7.', or 'The car is now turning right at speed 5.', 'The car has stopped.'"
 ]
 model = GenerativeModel("gemini-2.0-flash-001", system_instruction=SYSTEM_INSTRUCTION)
 
@@ -68,7 +70,7 @@ get_direction_func = FunctionDeclaration(
             "speed": {
                 "type": "string",
                 "default": "7",
-                "description": "Speed of the motors in percentage (default is '7')"
+                "description": "Optional: Speed of the motors in percentage (default is '7')"
             },
         },
         "required": ["right_motors", "left_motors"],
@@ -171,6 +173,7 @@ async def chat_endpoint(req: ChatRequest):
     print(reply)
     if function_call_part and function_call_part.function_call.name == "get_direction":
         args = function_call_part.function_call.args
+        # The speed value is correctly extracted and passed to move_car
         mqtt_result = move_car(args["right_motors"], args["left_motors"], args.get("speed", "7"))
 
         history.extend([
@@ -180,8 +183,8 @@ async def chat_endpoint(req: ChatRequest):
             ]),
         ])
 
-        
-
+        # The follow_up model call will now use the updated SYSTEM_INSTRUCTION
+        # to generate a response that includes the speed.
         follow_up = model.generate_content(history, tools=[tool])
         final_text = follow_up.candidates[0].content.parts[0].text
         history.append(follow_up.candidates[0].content)
@@ -210,6 +213,8 @@ async def transcribe_audio(audio: UploadFile = File(...)):
             sample_rate_hertz=48000, # Common sample rate for WebM Opus. Adjust if your actual recording differs.
             language_code="en-US", # Set to your desired language
             enable_automatic_punctuation=True,
+            enable_spoken_punctuation=True,
+            enable_word_time_offsets=False,
             model="latest_long", # Use a suitable model
         )
 

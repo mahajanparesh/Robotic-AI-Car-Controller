@@ -11,6 +11,7 @@ import {
   Mic, // Import the Mic icon
   StopCircle, // Import StopCircle icon for stopping recording
 } from "lucide-react";
+import "./App.css"; // Import your external CSS file
 
 interface Message {
   id: number;
@@ -77,7 +78,7 @@ const App = () => {
 
   const initializeSession = async () => {
     try {
-      const response = await fetch("http://localhost:8000/start_session", {
+      const response = await fetch("http://127.0.0.1:8000/start_session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -101,9 +102,9 @@ const App = () => {
         const data = JSON.stringify({ session_id: sessionId });
         if (navigator.sendBeacon) {
           const blob = new Blob([data], { type: "application/json" });
-          navigator.sendBeacon("http://localhost:8000/end_session", blob);
+          navigator.sendBeacon("http://127.0.0.1:8000/end_session", blob);
         } else {
-          await fetch("http://localhost:8000/end_session", {
+          await fetch("http://127.0.0.1:8000/end_session", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -144,7 +145,7 @@ const App = () => {
     setInput("");
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:8000/chat", {
+      const response = await fetch("http://127.0.0.1:8000/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -284,7 +285,7 @@ const App = () => {
     formData.append("audio", audioBlob);
 
     try {
-      const response = await fetch("http://localhost:8000/transcribe_audio", {
+      const response = await fetch("http://127.0.0.1:8000/transcribe_audio", {
         method: "POST",
         body: formData,
       });
@@ -314,480 +315,25 @@ const App = () => {
     }
   };
 
-  const styles = {
-    container: {
-      minHeight: "100vh",
-      backgroundColor: "#fafafa",
-      display: "flex",
-      flexDirection: "column" as const,
-      fontFamily:
-        '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    },
-    header: {
-      backgroundColor: "white",
-      borderBottom: "1px solid #e5e7eb",
-      padding: "20px",
-      boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
-    },
-    headerContent: {
-      maxWidth: "1200px",
-      margin: "0 auto",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-    },
-    headerLeft: {
-      display: "flex",
-      alignItems: "center",
-      gap: "16px",
-    },
-    logo: {
-      backgroundColor: "#3b82f6",
-      padding: "12px",
-      borderRadius: "12px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    title: {
-      fontSize: "24px",
-      fontWeight: "600",
-      color: "#111827",
-      margin: 0,
-    },
-    status: {
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-      fontSize: "14px",
-      color: "#6b7280",
-    },
-    statusDot: {
-      width: "8px",
-      height: "8px",
-      borderRadius: "50%",
-      backgroundColor: connectionStatus === "connected" ? "#10b981" : "#ef4444",
-    },
-    sessionInfo: {
-      fontSize: "12px",
-      color: "#9ca3af",
-      fontFamily: "monospace",
-    },
-    mainContent: {
-      flex: 1,
-      maxWidth: "1200px",
-      margin: "0 auto",
-      width: "100%",
-      padding: "24px",
-      display: "flex",
-      gap: "24px",
-    },
-    chatArea: {
-      flex: 1,
-      display: "flex",
-      flexDirection: "column" as const,
-      minWidth: 0,
-    },
-    messagesContainer: {
-      flex: 1,
-      backgroundColor: "white",
-      borderRadius: "16px",
-      border: "1px solid #e5e7eb",
-      padding: "24px",
-      marginBottom: "20px",
-      overflow: "hidden",
-      boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
-    },
-    messagesScroll: {
-      height: "500px",
-      overflowY: "auto" as const,
-      paddingRight: "8px",
-    },
-    messageContainer: {
-      display: "flex",
-      marginBottom: "20px",
-    },
-    userMessageContainer: {
-      justifyContent: "flex-end",
-    },
-    botMessageContainer: {
-      justifyContent: "flex-start",
-    },
-    message: {
-      maxWidth: "75%",
-      padding: "12px 16px",
-      borderRadius: "16px",
-      fontSize: "15px",
-      lineHeight: "1.5",
-    },
-    userMessage: {
-      backgroundColor: "#3b82f6",
-      color: "white",
-    },
-    botMessage: {
-      backgroundColor: "#f3f4f6",
-      color: "#374151",
-      border: "1px solid #e5e7eb",
-    },
-    errorMessage: {
-      backgroundColor: "#fef2f2",
-      color: "#dc2626",
-      border: "1px solid #fecaca",
-    },
-    messageTime: {
-      fontSize: "12px",
-      opacity: 0.6,
-      marginTop: "6px",
-      textAlign: "right" as const,
-    },
-    loadingContainer: {
-      display: "flex",
-      justifyContent: "flex-start",
-      marginBottom: "20px",
-    },
-    loadingMessage: {
-      backgroundColor: "#f3f4f6",
-      border: "1px solid #e5e7eb",
-      padding: "12px 16px",
-      borderRadius: "16px",
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-    },
-    loadingDots: {
-      display: "flex",
-      gap: "4px",
-    },
-    loadingDot: {
-      width: "6px",
-      height: "6px",
-      backgroundColor: "#9ca3af",
-      borderRadius: "50%",
-      animation: "bounce 1.4s infinite ease-in-out",
-    },
-    inputArea: {
-      backgroundColor: "white",
-      borderRadius: "16px",
-      border: "1px solid #e5e7eb",
-      padding: "20px",
-      boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
-    },
-    inputContainer: {
-      display: "flex",
-      gap: "12px",
-    },
-    input: {
-      flex: 1,
-      padding: "14px 16px",
-      border: "1px solid #d1d5db",
-      borderRadius: "12px",
-      fontSize: "15px",
-      outline: "none",
-      transition: "border-color 0.2s",
-      backgroundColor: "#fafafa",
-    },
-    inputFocus: {
-      borderColor: "#3b82f6",
-      backgroundColor: "white",
-    },
-    sendButton: {
-      backgroundColor: "#3b82f6",
-      color: "white",
-      border: "none",
-      padding: "14px 16px",
-      borderRadius: "12px",
-      cursor: "pointer",
-      transition: "background-color 0.2s",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      minWidth: "50px",
-    },
-    sendButtonDisabled: {
-      backgroundColor: "#d1d5db",
-      cursor: "not-allowed",
-    },
-    sidebar: {
-      width: "280px",
-      display: "flex",
-      flexDirection: "column" as const,
-      gap: "20px",
-    },
-    quickCommands: {
-      backgroundColor: "white",
-      borderRadius: "16px",
-      border: "1px solid #e5e7eb",
-      padding: "20px",
-      boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
-    },
-    sidebarTitle: {
-      fontSize: "16px",
-      fontWeight: "600",
-      color: "#111827",
-      marginBottom: "16px",
-      margin: 0,
-    },
-    commandGrid: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: "10px",
-    },
-    commandButton: {
-      display: "flex",
-      flexDirection: "column" as const,
-      alignItems: "center",
-      gap: "8px",
-      padding: "16px 12px",
-      backgroundColor: "#f9fafb",
-      border: "1px solid #e5e7eb",
-      borderRadius: "12px",
-      cursor: "pointer",
-      transition: "all 0.2s",
-      fontSize: "13px",
-      fontWeight: "500",
-      color: "#374151",
-    },
-    commandButtonHover: {
-      backgroundColor: "#f3f4f6",
-      borderColor: "#d1d5db",
-      transform: "translateY(-1px)",
-    },
-    commandButtonDisabled: {
-      opacity: 0.5,
-      cursor: "not-allowed",
-    },
-    clearButton: {
-      backgroundColor: "#ef4444",
-      color: "white",
-      border: "none",
-      padding: "8px 12px",
-      borderRadius: "8px",
-      cursor: "pointer",
-      fontSize: "12px",
-      marginTop: "10px",
-    },
-    micButton: {
-      backgroundColor: isRecording ? "#ef4444" : "#4CAF50", // Red when recording, green when not
-      color: "white",
-      border: "none",
-      padding: "14px 16px",
-      borderRadius: "12px",
-      cursor: "pointer",
-      transition: "background-color 0.2s",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      minWidth: "50px",
-    },
-    micButtonDisabled: {
-      backgroundColor: "#d1d5db",
-      cursor: "not-allowed",
-    },
-    speedControl: {
-      marginTop: "20px",
-      paddingTop: "16px",
-      borderTop: "1px solid #e5e7eb",
-      display: "flex",
-      flexDirection: "column" as const,
-      gap: "10px",
-    },
-    speedSlider: {
-      width: "100%",
-      height: "8px",
-      borderRadius: "4px",
-      background: "#d1d5db",
-      outline: "none",
-      cursor: "pointer",
-    },
-    speedValue: {
-      fontSize: "14px",
-      fontWeight: "500",
-      color: "#374151",
-      textAlign: "center" as const,
-    },
-  };
   return (
-    <div style={styles.container}>
-      <style>
-        {`
-          @keyframes bounce {
-            0%, 80%, 100% {
-              transform: scale(0);
-              opacity: 0.5;
-            }
-            40% {
-              transform: scale(1);
-              opacity: 1;
-            }
-          }
-          .loading-dot-1 { animation-delay: -0.32s; }
-          .loading-dot-2 { animation-delay: -0.16s; }
-          .loading-dot-3 { animation-delay: 0s; }
-          *::-webkit-scrollbar {
-            width: 4px;
-          }
-          *::-webkit-scrollbar-track {
-            background: transparent;
-          }
-          *::-webkit-scrollbar-thumb {
-            background: #d1d5db;
-            border-radius: 2px;
-          }
-          *::-webkit-scrollbar-thumb:hover {
-            background: #9ca3af;
-          }
-          input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #3b82f6;
-            cursor: pointer;
-            border: 2px solid white;
-            box-shadow: 0 0 0 1px #3b82f6;
-          }
-          input[type=range]::-moz-range-thumb {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #3b82f6;
-            cursor: pointer;
-            border: 2px solid white;
-            box-shadow: 0 0 0 1px #3b82f6;
-          }
-
-          /* --- Responsive Styles --- */
-          @media (max-width: 768px) {
-            .main-content-responsive {
-              flex-direction: column; /* Stack chat and sidebar vertically */
-              padding: 0; /* Remove main padding to allow inner cards to use full width with their own margins */
-              gap: 0; /* No gap needed if margins are applied to children */
-              max-width: 100%; /* Ensure it takes full width */
-              margin: 0; /* Remove auto margins */
-            }
-
-            .header-content-responsive {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-                padding: 15px; /* Adjust header content padding */
-            }
-
-            .header-responsive {
-                padding: 15px; /* Adjust header padding */
-            }
-
-            .header-left-responsive {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 8px;
-            }
-
-            .title-responsive {
-                font-size: 20px;
-            }
-
-            .chat-area-responsive,
-            .sidebar-responsive {
-              width: 100%; /* Make both chat area and sidebar take full width */
-              margin-left: auto; /* Center if needed, but not strictly if 100% */
-              margin-right: auto;
-            }
-
-            .messages-container-responsive {
-                height: 350px; /* Reduce chat height */
-                margin: 16px; /* Add margin around the container */
-            }
-            .input-area-responsive {
-                margin: 0 16px 16px 16px; /* Add margin for input area */
-            }
-            .quick-commands-responsive {
-                margin: 0 16px 16px 16px; /* Add margin for quick commands */
-            }
-
-            /* For the very first element in main-content, add top margin */
-            .main-content-responsive > .chat-area-responsive {
-                margin-top: 16px;
-            }
-
-            .messages-container-responsive,
-            .input-area-responsive,
-            .quick-commands-responsive {
-                border-radius: 12px;
-                padding: 20px; /* Keep padding consistent for content inside cards */
-            }
-
-            .command-grid-responsive {
-                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            }
-          }
-
-          @media (max-width: 480px) {
-            .header-responsive {
-                padding: 10px; /* Even smaller header padding */
-            }
-            .title-responsive {
-                font-size: 16px; /* Even smaller title */
-            }
-            .logo-responsive {
-                padding: 6px; /* Smaller logo padding */
-            }
-            .messages-container-responsive {
-                height: 250px; /* Further reduce chat height */
-                margin: 10px; /* Smaller margins for very small screens */
-            }
-            .input-area-responsive {
-                margin: 0 10px 10px 10px; /* Smaller margins */
-            }
-            .quick-commands-responsive {
-                margin: 0 10px 10px 10px; /* Smaller margins */
-            }
-            .messages-container-responsive,
-            .input-area-responsive,
-            .quick-commands-responsive {
-                padding: 15px; /* Adjust padding for content inside cards */
-            }
-            .message-responsive {
-                max-width: 95%; /* Messages take more width */
-                font-size: 13px; /* Smaller message font size */
-            }
-            .input-responsive {
-                padding: 10px 12px; /* Smaller input padding */
-                font-size: 13px;
-            }
-            .send-button-responsive,
-            .mic-button-responsive {
-                padding: 10px 12px; /* Smaller button padding */
-                min-width: 40px; /* Adjust min-width */
-            }
-            .command-button-responsive {
-                padding: 10px 6px; /* Smaller command button padding */
-                font-size: 11px; /* Smaller command button font */
-            }
-            .clear-button-responsive {
-                padding: 5px 8px; /* Smaller clear button padding */
-                font-size: 10px;
-            }
-             .main-content-responsive > .chat-area-responsive {
-                margin-top: 10px;
-            }
-          }
-        `}
-      </style>
+    <div className="container">
       {/* Header */}
-      <div style={styles.header} className="header-responsive">
-        <div style={styles.headerContent} className="header-content-responsive">
-          <div style={styles.headerLeft} className="header-left-responsive">
-            <div style={styles.logo} className="logo-responsive">
+      <div className="header">
+        <div className="header-content">
+          <div className="header-left">
+            <div className="logo">
               <Car style={{ width: "24px", height: "24px", color: "white" }} />
             </div>
             <div>
-              <h1 style={styles.title} className="title-responsive">
-                Robotic Car Control AI ChatBot
-              </h1>
-              <div style={styles.status}>
-                <div style={styles.statusDot}></div>
+              <h1 className="title">Robotic Car Control AI ChatBot</h1>
+              <div className="status">
+                <div
+                  className={`status-dot ${
+                    connectionStatus === "connected"
+                      ? "connected"
+                      : "disconnected"
+                  }`}
+                ></div>
                 <span>
                   {connectionStatus === "connected"
                     ? "Connected"
@@ -798,7 +344,7 @@ const App = () => {
           </div>
           <div>
             {sessionId && (
-              <div style={styles.sessionInfo}>
+              <div className="session-info">
                 Session: {sessionId.substring(0, 8)}...
               </div>
             )}
@@ -806,62 +352,36 @@ const App = () => {
         </div>
       </div>
       {/* Main Content */}
-      <div style={styles.mainContent} className="main-content-responsive">
+      <div className="main-content">
         {/* Chat Area */}
-        <div style={styles.chatArea} className="chat-area-responsive">
+        <div className="chat-area">
           {/* Messages */}
-          <div
-            style={styles.messagesContainer}
-            className="messages-container-responsive"
-          >
-            <div
-              style={styles.messagesScroll}
-              className="messages-scroll-responsive"
-            >
+          <div className="messages-container">
+            <div className="messages-scroll">
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  style={{
-                    ...styles.messageContainer,
-                    ...(message.role === "user"
-                      ? styles.userMessageContainer
-                      : styles.botMessageContainer),
-                  }}
+                  className={`message-container ${message.role}`}
                 >
                   <div
-                    style={{
-                      ...styles.message,
-                      ...(message.role === "user"
-                        ? styles.userMessage
-                        : message.isError
-                        ? styles.errorMessage
-                        : styles.botMessage),
-                    }}
-                    className="message-responsive"
+                    className={`message ${message.role} ${
+                      message.isError ? "error" : ""
+                    }`}
                   >
                     <div>{message.text}</div>
-                    <div style={styles.messageTime}>
+                    <div className="message-time">
                       {formatTime(message.timestamp)}
                     </div>
                   </div>
                 </div>
               ))}
               {isLoading && (
-                <div style={styles.loadingContainer}>
-                  <div style={styles.loadingMessage}>
-                    <div style={styles.loadingDots}>
-                      <div
-                        style={styles.loadingDot}
-                        className="loading-dot-1"
-                      ></div>
-                      <div
-                        style={styles.loadingDot}
-                        className="loading-dot-2"
-                      ></div>
-                      <div
-                        style={styles.loadingDot}
-                        className="loading-dot-3"
-                      ></div>
+                <div className="loading-container">
+                  <div className="loading-message">
+                    <div className="loading-dots">
+                      <div className="loading-dot loading-dot-1"></div>
+                      <div className="loading-dot loading-dot-2"></div>
+                      <div className="loading-dot loading-dot-3"></div>
                     </div>
                     <span>Thinking...</span>
                   </div>
@@ -871,8 +391,8 @@ const App = () => {
             </div>
           </div>
           {/* Input Area */}
-          <div style={styles.inputArea} className="input-area-responsive">
-            <div style={styles.inputContainer}>
+          <div className="input-area">
+            <div className="input-container">
               <input
                 type="text"
                 value={input}
@@ -883,38 +403,15 @@ const App = () => {
                 placeholder={
                   isRecording ? "Listening..." : "Type your command here..."
                 }
-                style={styles.input}
+                className="input"
                 disabled={isLoading || !sessionId || isRecording} // Disable input while recording
-                onFocus={(e) => {
-                  e.target.style.borderColor = "#3b82f6";
-                  e.target.style.backgroundColor = "white";
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = "#d1d5db";
-                  e.target.style.backgroundColor = "#fafafa";
-                }}
-                className="input-responsive"
               />
               <button
                 onClick={isRecording ? stopRecording : startRecording}
                 disabled={isLoading || !sessionId}
-                style={{
-                  ...styles.micButton,
-                  ...(isLoading || !sessionId ? styles.micButtonDisabled : {}),
-                }}
-                onMouseEnter={(e) => {
-                  if (!isLoading && sessionId) {
-                    (e.target as HTMLElement).style.backgroundColor =
-                      isRecording ? "#dc2626" : "#45a049"; // Darker red/green on hover
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isLoading && sessionId) {
-                    (e.target as HTMLElement).style.backgroundColor =
-                      isRecording ? "#ef4444" : "#4CAF50"; // Original red/green
-                  }
-                }}
-                className="mic-button-responsive"
+                className={`mic-button ${
+                  isLoading || !sessionId ? "disabled" : ""
+                } ${isRecording ? "recording" : ""}`}
               >
                 {isRecording ? (
                   <StopCircle style={{ width: "18px", height: "18px" }} />
@@ -927,23 +424,11 @@ const App = () => {
                 disabled={
                   isLoading || !input.trim() || !sessionId || isRecording
                 } // Disable send button if recording
-                style={{
-                  ...styles.sendButton,
-                  ...(isLoading || !input.trim() || !sessionId || isRecording
-                    ? styles.sendButtonDisabled
-                    : {}),
-                }}
-                onMouseEnter={(e) => {
-                  if (!isLoading && input.trim() && sessionId && !isRecording) {
-                    (e.target as HTMLElement).style.backgroundColor = "#2563eb";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isLoading && input.trim() && sessionId && !isRecording) {
-                    (e.target as HTMLElement).style.backgroundColor = "#3b82f6";
-                  }
-                }}
-                className="send-button-responsive"
+                className={`send-button ${
+                  isLoading || !input.trim() || !sessionId || isRecording
+                    ? "disabled"
+                    : ""
+                }`}
               >
                 <Send style={{ width: "18px", height: "18px" }} />
               </button>
@@ -951,41 +436,18 @@ const App = () => {
           </div>
         </div>
         {/* Quick Commands Panel */}
-        <div style={styles.sidebar} className="sidebar-responsive">
-          <div
-            style={styles.quickCommands}
-            className="quick-commands-responsive"
-          >
-            <h3 style={styles.sidebarTitle}>Quick Commands</h3>
-            <div style={styles.commandGrid} className="command-grid-responsive">
+        <div className="sidebar">
+          <div className="quick-commands">
+            <h3 className="sidebar-title">Quick Commands</h3>
+            <div className="command-grid">
               {quickCommands.map((cmd, index) => (
                 <button
                   key={index}
                   onClick={() => handleQuickCommand(cmd.command)}
                   disabled={isLoading || !sessionId || isRecording} // Disable quick commands if recording
-                  style={{
-                    ...styles.commandButton,
-                    ...(isLoading || !sessionId || isRecording
-                      ? styles.commandButtonDisabled
-                      : {}),
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isLoading && sessionId && !isRecording) {
-                      const target = e.target as HTMLElement;
-                      target.style.backgroundColor = "#f3f4f6";
-                      target.style.borderColor = "#d1d5db";
-                      target.style.transform = "translateY(-1px)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isLoading && sessionId && !isRecording) {
-                      const target = e.target as HTMLElement;
-                      target.style.backgroundColor = "#f9fafb";
-                      target.style.borderColor = "#e5e7eb";
-                      target.style.transform = "translateY(0)";
-                    }
-                  }}
-                  className="command-button-responsive"
+                  className={`command-button ${
+                    isLoading || !sessionId || isRecording ? "disabled" : ""
+                  }`}
                 >
                   <cmd.icon
                     style={{ width: "20px", height: "20px", color: "#6b7280" }}
@@ -994,30 +456,20 @@ const App = () => {
                 </button>
               ))}
             </div>
-            <div style={styles.speedControl}>
-              <h3 style={styles.sidebarTitle}>Speed Control</h3>
+            <div className="speed-control">
+              <h3 className="sidebar-title">Speed Control</h3>
               <input
                 type="range"
                 min="0"
                 max="100"
                 value={speed}
                 onChange={(e) => setSpeed(Number(e.target.value))}
-                style={styles.speedSlider}
+                className="speed-slider"
                 disabled={isLoading || !sessionId || isRecording}
               />
-              <div style={styles.speedValue}>Speed (%): {speed}</div>
+              <div className="speed-value">Speed (%): {speed}</div>
             </div>
-            <button
-              onClick={clearChat}
-              style={styles.clearButton}
-              onMouseEnter={(e) => {
-                (e.target as HTMLElement).style.backgroundColor = "#dc2626";
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLElement).style.backgroundColor = "#ef4444";
-              }}
-              className="clear-button-responsive"
-            >
+            <button onClick={clearChat} className="clear-button">
               Clear Chat (UI Only)
             </button>
           </div>
@@ -1026,4 +478,5 @@ const App = () => {
     </div>
   );
 };
+
 export default App;
