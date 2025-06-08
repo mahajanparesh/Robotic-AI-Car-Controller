@@ -25,3 +25,5 @@ ENV/
 
 # Log files
 *.log
+
+chatbot2.py

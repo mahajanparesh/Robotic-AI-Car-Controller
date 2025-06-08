@@ -1,9 +1,9 @@
-google-cloud-aiplatform
-streamlit 
-speechrecognition 
-pyttsx3 
-vertexai
-gTTS
-paho-mqtt
 fastapi
 uvicorn
+paho-mqtt
+vertexai
+google-cloud-aiplatform
+google-cloud-speech
+google-auth
+pydantic
+python-multipart
