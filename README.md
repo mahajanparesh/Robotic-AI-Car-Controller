@@ -7,7 +7,7 @@ This project demonstrates a cutting-edge integration of **Generative AI** with *
 
 ## 📽️ Demo Video
 
-> [[Watch the full demo here](#)](https://drive.google.com/file/d/1LosG1g4OIYx_ON-nQjEminQw5kPsJua2/view?usp=sharing) <!-- Replace with your video link -->
+> [[Watch the full demo here](https://drive.google.com/file/d/1LosG1g4OIYx_ON-nQjEminQw5kPsJua2/view?usp=sharing)]
 
 ---
 
