@@ -46,9 +46,8 @@ This project demonstrates a cutting-edge integration of **Generative AI** with *
 
 ```
 ├── backend/
-│   ├── app.py                  # FastAPI app
-│   ├── speech_to_text.py       # Google STT integration
-│   ├── vertex_handler.py       # Gemini API logic
+│   ├── main.py               # FastAPI app
+│   ├── requirements.txt     # Gemini API logic
 ├── frontend/
 │   ├── public/
 │   ├── src/
