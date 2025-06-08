@@ -4,6 +4,11 @@
 This project demonstrates a cutting-edge integration of **Generative AI** with **Robotics and IoT Automation**, using **Google AI technologies** such as **Vertex AI** and **Gemini API**. It enables real-time control of a robotic car via both **natural language text commands** and **voice input**, supporting **multilingual voice recognition** (e.g., Hindi, English, etc.) and a responsive **React-based UI**.
 
 ---
+## 📽️ Deployed Website Link
+
+> https://genai-exchange-bootcamp-462109.web.app/app.tsx
+
+---
 
 ## 📽️ Demo Video
 
