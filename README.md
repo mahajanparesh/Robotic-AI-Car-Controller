@@ -47,7 +47,7 @@ This project demonstrates a cutting-edge integration of **Generative AI** with *
 ```
 ├── backend/
 │   ├── main.py               # FastAPI app
-│   ├── requirements.txt     # Gemini API logic
+│   ├── requirements.txt
 ├── frontend/
 │   ├── public/
 │   ├── src/
